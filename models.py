@@ -6,29 +6,30 @@ from hyperspherical_vae.distributions import VonMisesFisher, HypersphericalUnifo
 from utils.model_utils import create_encoder, create_decoder, lower_triangular_matrix_from_vector
 
 
-# noinspection PyUnresolvedReferences
-# noinspection PyCallingNonCallable
 class VAE(nn.Module):
 
     def __init__(self, h_dims, z_dim, input_size=[1, 28, 28], input_type='binary', distribution='normal',
-                 r=torch.tensor(1.), encode_type='mlp', decode_type='mlp', device='cpu', flags=None):
+                 encode_type='mlp', decode_type='mlp', device='cpu', flags=None):
         """
         ModelVAE initializer
-        :param in_dim: dimension of input
         :param h_dims: dimension of the hidden layers, list
         :param z_dim: dimension of the latent representation
+        :param input_size: dimensions of input
+        :param input_type: (str) e.g binary
         :param distribution: string either `normal` or `vmf`, indicates which distribution to use
-        :param r: radius scalar
+        :param encode_type: (str) one of {mlp, cnn}
+        :param decode_type: (str) one of {mlp, cnn}
         :param device: device to use
+        :param flags: user-defined settings in Namespace object
         """
-        super(MF, self).__init__()
+        super(VAE, self).__init__()
 
         self.flags = flags
         self.name = distribution
         self.epochs, self.num_restarts = 0, 0
         self.input_size, self.z_dim, self.distribution, self.device = input_size, z_dim, distribution, device
         self.encode_type, self.decode_type = encode_type, decode_type
-        self.r = r.to(device)
+        self.r = torch.tensor(1.)
 
         self.encoder, self.fc_mean, self.fc_var = create_encoder(input_size, input_type, [z_dim], h_dims,
                                                                  distribution, encode_type, flags)
@@ -157,20 +158,21 @@ class VAE(nn.Module):
         return (q_z, p_z), z, x_recon
 
 
-# noinspection PyUnresolvedReferences
-# noinspection PyCallingNonCallable
 class ProductSpaceVAE(torch.nn.Module):
 
-    def __init__(self, h_dims, z_dims, input_size=[1, 28, 28], input_type = 'binary', distribution='normal',
-                 r=None, encode_type='mlp', decode_type='mlp', device='cpu', flags=None):
+    def __init__(self, h_dims, z_dims, input_size=[1, 28, 28], input_type='binary', distribution='normal',
+                 encode_type='mlp', decode_type='mlp', device='cpu', flags=None):
         """
         ModelVAE initializer
-        :param in_dim: dimension of input
         :param h_dims: dimension of the hidden layers, list
         :param z_dims: dimensions of the latent representation, list
+        :param input_size: dimensions of input
+        :param input_type: (str) e.g binary
         :param distribution: string either `normal` or `vmf`, indicates which distribution to use
-        :param r: radii scalars, list
+        :param encode_type: (str) one of {mlp, cnn}
+        :param decode_type: (str) one of {mlp, cnn}
         :param device: device to use
+        :param flags: user-defined settings in Namespace object
         """
         super(ProductSpaceVAE, self).__init__()
 
@@ -184,21 +186,13 @@ class ProductSpaceVAE(torch.nn.Module):
         self.z_unique, self.z_counts = np.unique(self.z_dims, return_counts=True)
         self.z_u_idx = [np.where(self.z_dims == u)[0] for u in self.z_unique]
 
-        self.r = torch.ones(len(z_dims), device=device) if r is None else r  # not used yet
+        self.r = torch.ones(len(z_dims), device=device)
 
         self.encoder, self.fc_means, self.fc_vars = create_encoder(input_size, input_type, self.z_dims, h_dims,
                                                                    distribution, encode_type, flags)
         self.decoder = create_decoder(input_size, input_type, z_dims, h_dims, decode_type)
 
-    @staticmethod
-    def _print(x):
-        print('\n')
-        print(x)
-        print('\n')
-
     def encode(self, x):
-        # x = self.encoder_mlp(x)
-
         if self.encode_type == 'cnn':
             x = x.reshape(x.size(0), *self.input_size)
 
@@ -228,7 +222,6 @@ class ProductSpaceVAE(torch.nn.Module):
         return x_recon.view(x_recon.size(0), -1)
 
     def reparameterize(self, z_means, z_vars):
-
         # since z is sorted, we take the min index, and the max index, to slice the list of z_means, z_vars
         # this is done to not have convert to numpy array
         gather_zvs = [(torch.cat(z_means[min(u_idx):max(u_idx) + 1], 0),
@@ -309,7 +302,7 @@ class ProductSpaceVAE(torch.nn.Module):
 
         return ((log_p_x_z + log_p_z.to(self.device) - log_q_z_x).t().logsumexp(-1) - np.log(n)).mean()
 
-    def forward(self, x, n=None):
+    def forward(self, x):
 
         z_means, z_vars = self.encode(x)
         if torch.isnan(z_means[0]).sum() > 0 or torch.isnan(z_vars[0]).sum() > 0:

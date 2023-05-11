@@ -35,7 +35,7 @@ class MLP(nn.Module):
 
 def lower_triangular_vector(z):
     """
-    Get number of non-zero indices of lower-triangular matrix
+    Get number of non-zero indices of lower-triangular matrix (used for full-covariance gaussian vae)
     :param z: dimensionality of [z x z] matrix
     :return:
     """
@@ -44,7 +44,7 @@ def lower_triangular_vector(z):
 
 def lower_triangular_matrix_from_vector(v, z, batch, idx=None):
     """
-    Create lower triangular matrix from vector
+    Create lower triangular matrix from vector (used for full-covariance gaussian vae)
     :param v: batched vector with index content, [batch, tril_values]
     :param z: dimensionality of matrix, [z x z]
     :param batch: batch size
@@ -138,7 +138,6 @@ def create_decoder(input_size, input_type, z_dims, h_dims, decode_type='mlp'):
         last_kernel_size = (7, 5)
     else:
         pass
-        # raise ValueError('invalid input size!!')
 
     num_classes = 256
 

@@ -81,7 +81,7 @@ class VonMisesFisher(torch.distributions.Distribution):
 
     @staticmethod
     def first_nonzero(x, dim, invalid_val=-1):
-        mask = x > 0
+        mask = (x > 0).int()
         idx = torch.where(mask.any(dim=dim), mask.argmax(dim=1).squeeze(),
                           torch.tensor(invalid_val, device=x.device))
         return idx
@@ -113,7 +113,7 @@ class VonMisesFisher(torch.distributions.Distribution):
             e_ = e_.gather(1, accept_idx_clamped.view(-1, 1))
 
             reject = (accept_idx < 0)
-            accept = (1 - reject)
+            accept = ~reject #(1 - reject)
 
             w[bool_mask * accept] = w_[bool_mask * accept]
             e[bool_mask * accept] = e_[bool_mask * accept]
