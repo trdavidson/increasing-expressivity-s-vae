@@ -18,7 +18,7 @@ idea: break up S^m into multiple S^i, where the sum of all i <= _m_:
 - (-) **fewer degrees of freedom**: when keeping total ambient space *m* fixed, each break loses a degree of freedom 
 
 <p align="center">
-<img src="https://github.com/trdavidson/increasing-expressivity-s-vae/blob/master/sxvae-figure.png" alt="sx9 example"/>
+<img src="https://github.com/trdavidson/increasing-expressivity-s-vae/blob/main/sxvae-figure.png" alt="sx9 example"/>
 </p>
 
 _Structural interpolation of S^9 ⊂ R^10, where each corner represents a separate dimension such that the dimensionality 
